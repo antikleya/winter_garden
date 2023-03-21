@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 class ChartData {
   ChartData(
       {required this.humidity,
@@ -9,7 +11,7 @@ class ChartData {
   final double outsideTemp;
   final double speed;
   final double temperature;
-  final DateTime timestamp;
+  final String timestamp;
 
   factory ChartData.fromRTDB(Map<String, dynamic> data) {
     return ChartData(
@@ -18,6 +20,6 @@ class ChartData {
         speed: data['speed'] / 10,
         temperature: data['temperature'],
         timestamp:
-            DateTime.fromMillisecondsSinceEpoch(data['timestamp'] * 1000));
+          DateFormat('M/d H:m').format(DateTime.fromMillisecondsSinceEpoch(data['timestamp'] * 1000)));
   }
 }

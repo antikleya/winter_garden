@@ -62,7 +62,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late List<ChartData> _ListChartData = [];
-  final TooltipBehavior _tooltipBehavior = TooltipBehavior(enable: false);
+  final TooltipBehavior _tooltipBehavior = TooltipBehavior(enable: true);
   final _database = FirebaseDatabase.instance.ref();
 
   @override
@@ -96,18 +96,27 @@ class _MyHomePageState extends State<MyHomePage> {
                 legend: Legend(isVisible: true),
                 // Enable tooltip
                 tooltipBehavior: _tooltipBehavior,
-                series: <LineSeries<ChartData, DateTime>>[
-                  LineSeries<ChartData, DateTime>(
+                series: <LineSeries<ChartData, String>>[
+                  LineSeries<ChartData, String>(
                     dataSource: dataSource,
                     xValueMapper: (ChartData data, _) => data.timestamp,
                     yValueMapper: (ChartData data, _) => data.temperature,
                     color: Colors.blue,
+                    name: 'Температура',
                   ),
-                  LineSeries<ChartData, DateTime>(
+                  LineSeries<ChartData, String>(
                     dataSource: dataSource,
                     xValueMapper: (ChartData data, _) => data.timestamp,
                     yValueMapper: (ChartData data, _) => data.speed,
                     color: Colors.red,
+                    name: 'Обороты пушки',
+                  ),
+                  LineSeries<ChartData, String>(
+                    dataSource: dataSource,
+                    xValueMapper: (ChartData data, _) => data.timestamp,
+                    yValueMapper: (ChartData data, _) => data.humidity,
+                    color: Colors.green,
+                    name: 'Влажность',
                   )
                 ]);
           }
