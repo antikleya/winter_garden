@@ -6,8 +6,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_database/firebase_database.dart';
 
+import 'models/ChartData.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -60,82 +61,60 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late List<_ChartData> _ListChartData = [];
-  final TooltipBehavior _tooltipBehavior = TooltipBehavior(enable: true);
+  late List<ChartData> _ListChartData = [];
+  final TooltipBehavior _tooltipBehavior = TooltipBehavior(enable: false);
   final _database = FirebaseDatabase.instance.ref();
-  late StreamSubscription _streamSubscription;
 
   @override
-  void initState(){
+  void initState() {
     super.initState();
-    _activateListeners();
-  }
-
-  void _activateListeners() {
-    _streamSubscription = _database.child("Log").onValue.listen((event) {
-      var data;
-      // List<_ChartData> newData = [];
-      for (final child in event.snapshot.children) {
-        data = child.value as Map<String, dynamic>;
-        _ListChartData.add(_ChartData.fromRTDB(data));
-      }
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: Center(
-            child: Container(
-                child: SfCartesianChart(
+      body: Padding(
+      padding: EdgeInsets.all(10),
+      child: Center(
+          child: StreamBuilder<DatabaseEvent>(
+        builder: (context, snapshot) {
+          if (snapshot.hasError ||
+              snapshot.connectionState == ConnectionState.waiting) {
+            return const CircularProgressIndicator();
+          } else {
+            var dataSource = <ChartData>[];
+            var data = snapshot.data!.snapshot.children;
+            for (final child in data) {
+              var returnable = child.value as Map<String, dynamic>;
+              dataSource.add(ChartData.fromRTDB(returnable));
+            }
+            return SfCartesianChart(
+                primaryXAxis: CategoryAxis(),
+                // Chart title
+                title: ChartTitle(text: 'Temperature graph'),
+                // Enable legend
+                legend: Legend(isVisible: true),
+                // Enable tooltip
+                tooltipBehavior: _tooltipBehavior,
+                series: <LineSeries<ChartData, DateTime>>[
+                  LineSeries<ChartData, DateTime>(
+                    dataSource: dataSource,
+                    xValueMapper: (ChartData data, _) => data.timestamp,
+                    yValueMapper: (ChartData data, _) => data.temperature,
+                    color: Colors.blue,
+                  ),
+                  LineSeries<ChartData, DateTime>(
+                    dataSource: dataSource,
+                    xValueMapper: (ChartData data, _) => data.timestamp,
+                    yValueMapper: (ChartData data, _) => data.speed,
+                    color: Colors.red,
+                  )
+                ]);
+          }
+        },
+        stream: _database.child("Log").onValue,
+      )),
+    ));
 
-                    primaryXAxis: CategoryAxis(),
-                    // Chart title
-                    title: ChartTitle(text: 'Temperature graph'),
-                    // Enable legend
-                    legend: Legend(isVisible: true),
-                    // Enable tooltip
-                    tooltipBehavior: _tooltipBehavior,
-
-                    series: <LineSeries<_ChartData, DateTime>>[
-                      LineSeries<_ChartData, DateTime>(
-                          dataSource:  _ListChartData,
-                          xValueMapper: (_ChartData data, _) => data.timestamp,
-                          yValueMapper: (_ChartData data, _) => data.temperature,
-                          color: Colors.blue,
-                      ),
-                      LineSeries<_ChartData, DateTime>(
-                          dataSource:  _ListChartData,
-                          xValueMapper: (_ChartData data, _) => data.timestamp,
-                          yValueMapper: (_ChartData data, _) => data.speed / 10,
-                          color: Colors.red,
-                      )
-                    ]
-                )
-            )
-        )
-    );
-  }
-
-  @override
-  void deactivate() {
-    _streamSubscription.cancel();
-    super.deactivate();
-  }
-}
-
-class _ChartData {
-  _ChartData({required this.humidity, required this.outsideTemp,
-    required this.speed, required this.temperature, required this.timestamp});
-  final int humidity;
-  final double outsideTemp;
-  final int speed;
-  final double temperature;
-  final DateTime timestamp;
-
-  factory _ChartData.fromRTDB(Map<String, dynamic> data) {
-    return _ChartData(humidity: data["humidity"], outsideTemp: data['outsideTemp'],
-        speed: data['speed'], temperature: data['temperature'],
-        timestamp: DateTime.fromMillisecondsSinceEpoch(data['timestamp'] * 1000));
   }
 }
