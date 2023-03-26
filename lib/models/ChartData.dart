@@ -1,17 +1,18 @@
-import 'package:intl/intl.dart';
-
 class ChartData {
   ChartData(
       {required this.humidity,
       required this.outsideTemp,
       required this.speed,
       required this.temperature,
-      required this.timestamp});
+      required this.timestamp,
+      required this.humidifierRelayState});
   final int humidity;
   final double outsideTemp;
   final double speed;
   final double temperature;
-  final String timestamp;
+  final bool humidifierRelayState;
+  // final bool pumpRelayState;
+  final DateTime timestamp;
 
   factory ChartData.fromRTDB(Map<String, dynamic> data) {
     return ChartData(
@@ -19,7 +20,8 @@ class ChartData {
         outsideTemp: data['outsideTemp'],
         speed: data['speed'] / 10,
         temperature: data['temperature'],
+        humidifierRelayState: data['relayState'],
         timestamp:
-          DateFormat('M/d H:m').format(DateTime.fromMillisecondsSinceEpoch(data['timestamp'] * 1000)));
+        DateTime.fromMillisecondsSinceEpoch((data['timestamp'] - 3600*3) * 1000));
   }
 }

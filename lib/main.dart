@@ -1,12 +1,14 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_database/firebase_database.dart';
-
+import 'package:intl/intl.dart';
 import 'models/ChartData.dart';
+import 'telegram_client.dart';
+import 'telegram_config.dart';
+import 'alertHandler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +26,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Winter Garden Dashboard',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -61,12 +63,35 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late List<ChartData> _ListChartData = [];
-  final TooltipBehavior _tooltipBehavior = TooltipBehavior(enable: true);
+  late TooltipBehavior _tooltipBehavior;
   final _database = FirebaseDatabase.instance.ref();
+  late ZoomPanBehavior _zoomPanBehavior;
+  late TelegramClient _telegramClient;
+  late ChartData _lastDataPoint;
+  late Timer timer;
+  late AlertHandler alertHandler;
 
   @override
-  void initState() {
+  void initState(){
+    _telegramClient =  TelegramClient(
+      chatId: telegramConfig['chatId']!,
+      botToken: telegramConfig['botToken']!,
+    );
+    _zoomPanBehavior = ZoomPanBehavior(
+        enablePinching: true,
+        enableMouseWheelZooming: true,
+        enableSelectionZooming: true,
+        enablePanning: true,
+        zoomMode: ZoomMode.x);
+    _tooltipBehavior = TooltipBehavior(enable: true,
+      duration: 10000,
+      format: 'Время -> point.x\nseries.name -> point.y');
+    alertHandler = AlertHandler(
+        telegramClient: _telegramClient,
+        timeInterval: 40);
+    Timer.periodic(const Duration(seconds: 30), (timer) {
+      alertHandler.handleAlert(_lastDataPoint.timestamp);
+    });
     super.initState();
   }
 
@@ -74,7 +99,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-      padding: EdgeInsets.all(10),
+      padding: const EdgeInsets.all(10),
       child: Center(
           child: StreamBuilder<DatabaseEvent>(
         builder: (context, snapshot) {
@@ -88,37 +113,52 @@ class _MyHomePageState extends State<MyHomePage> {
               var returnable = child.value as Map<String, dynamic>;
               dataSource.add(ChartData.fromRTDB(returnable));
             }
+            _lastDataPoint = dataSource.last;
             return SfCartesianChart(
-                primaryXAxis: CategoryAxis(),
-                // Chart title
                 title: ChartTitle(text: 'Temperature graph'),
                 // Enable legend
                 legend: Legend(isVisible: true),
                 // Enable tooltip
                 tooltipBehavior: _tooltipBehavior,
-                series: <LineSeries<ChartData, String>>[
-                  LineSeries<ChartData, String>(
+                zoomPanBehavior: _zoomPanBehavior,
+                series: <ChartSeries>[
+                  FastLineSeries<ChartData, DateTime>(
                     dataSource: dataSource,
                     xValueMapper: (ChartData data, _) => data.timestamp,
                     yValueMapper: (ChartData data, _) => data.temperature,
                     color: Colors.blue,
                     name: 'Температура',
                   ),
-                  LineSeries<ChartData, String>(
+                  LineSeries<ChartData, DateTime>(
                     dataSource: dataSource,
                     xValueMapper: (ChartData data, _) => data.timestamp,
                     yValueMapper: (ChartData data, _) => data.speed,
-                    color: Colors.red,
+                    pointColorMapper: (ChartData data, _) =>
+                      data.speed < 5 ? Colors.teal : Colors.red,
                     name: 'Обороты пушки',
                   ),
-                  LineSeries<ChartData, String>(
+                  FastLineSeries<ChartData, DateTime>(
                     dataSource: dataSource,
                     xValueMapper: (ChartData data, _) => data.timestamp,
                     yValueMapper: (ChartData data, _) => data.humidity,
                     color: Colors.green,
                     name: 'Влажность',
-                  )
-                ]);
+                  ),
+                  FastLineSeries<ChartData, DateTime>(
+                    dataSource: dataSource,
+                    xValueMapper: (ChartData data, _) => data.timestamp,
+                    yValueMapper: (ChartData data, _) =>
+                      data.humidifierRelayState ? 15 : 10,
+                    color: Colors.deepOrange,
+                    name: 'Испаритель',
+                  ),
+                ],
+                primaryXAxis: DateTimeAxis(
+                  edgeLabelPlacement: EdgeLabelPlacement.shift,
+                  dateFormat: DateFormat("M/d H:mm"),
+                  intervalType: DateTimeIntervalType.minutes
+                ),
+            );
           }
         },
         stream: _database.child("Log").onValue,
