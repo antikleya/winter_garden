@@ -1,0 +1,54 @@
+version: "3.7"
+
+services:
+  postgres:
+    container_name: wg-postgres
+    image: postgres:14
+    env_file:
+      - /etc/wintergarden/.env
+    volumes:
+      - /data/winter_garden/pg_data:/var/lib/postgresql/data
+    command: postgres -c 'max_connections=50'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U winter_garden -d main" ]
+      interval: 7s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  api:
+    container_name: wg-api
+    image: wg-api
+    ports:
+      - "8000:8000"
+    working_dir: /srv
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+    env_file:
+      - /etc/wintergarden/.env
+    volumes:
+      - type: bind
+        source: api/
+        target: /srv
+    command: uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+
+  pgadmin:
+    container_name: wg-pgadmin
+    image: dpage/pgadmin4
+    logging:
+      driver: none
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+    ports:
+      - "9090:80"
+    env_file:
+      - /etc/wintergarden/.env
+
+networks:
+  default:
+    name: wg-net

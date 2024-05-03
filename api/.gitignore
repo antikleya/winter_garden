@@ -1,0 +1,5 @@
+.idea
+__pycache__
+*.env
+src/garden_config/garden_config.json
+venv

@@ -1,0 +1,14 @@
+sqlalchemy
+alembic
+fastapi[all] ~= 0.70
+fastapi-users[sqlalchemy] ~= 10.1.5
+fastapi-utils
+psycopg2-binary
+pydantic
+pytest ~= 6.2.5
+pytest-env
+pytest_asyncio
+starlette
+uvicorn[standard]
+asyncpg
+uuid
