@@ -14,4 +14,4 @@ class Measurement(HasTimestamp, Base):
     humidifier_relay_state = Column(Boolean, nullable=False)
     pump_relay_state = Column(Boolean, nullable=False)
 
-    debug_info = relationship("DebugInformation")
+    debug_info = relationship("DebugInformation", uselist=False)

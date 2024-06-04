@@ -1,9 +1,11 @@
 from pydantic import BaseModel
+from datetime import datetime
 from .debug_info import DebugInfo
 from .debug_info import DebugInfoCreate
 
 
 class Measurement(BaseModel):
+    timestamp: datetime
     speed: int
     inside_temperature: float
     outside_temperature: float

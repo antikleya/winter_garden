@@ -11,11 +11,11 @@ class BaseService:
 
     @classmethod
     def get_new_instance(cls, session: Session = Depends(get_session)):
-        yield cls(session)
+        return cls(session)
 
     def create(self, create_data: dict):
         model = self.model()
-        for key, value in vars(create_data).items():
+        for key, value in create_data.items():
             if value is not None:
                 setattr(model, key, value)
         self.session.add(model)

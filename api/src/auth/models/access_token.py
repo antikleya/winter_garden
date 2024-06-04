@@ -7,7 +7,6 @@ from .user import User
 
 
 class AccessToken(SQLAlchemyBaseAccessTokenTable[str], Base):
-    @classmethod
     @declared_attr
     def user_id(cls):
         return Column(String(), ForeignKey(User.id, ondelete="cascade"), nullable=False)

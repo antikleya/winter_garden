@@ -13,6 +13,6 @@ app.include_router(registration_router, prefix='/auth', tags=['auth'])
 app.include_router(measurement_router, prefix='/measurements', tags=['measurements'])
 
 
-@app.get('/test')
+@app.get('/health')
 def test_endpoint():
     return {"Hello": "World"}

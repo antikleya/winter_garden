@@ -8,6 +8,6 @@ class HasTimestamp:
     @declared_attr
     def timestamp(cls):
         return Column(
-            DateTime(),
+            DateTime,
             primary_key=True,
         )

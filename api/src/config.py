@@ -8,6 +8,7 @@ class Config(BaseSettings):
     DB_POOL_SIZE: int = 50
     DB_MAX_OVERFLOW: int = 50
     ENVIRONMENT: Environment = Environment.PRODUCTION
+    LOG_LEVEL: str = "DEBUG"
 
 
 settings = Config()

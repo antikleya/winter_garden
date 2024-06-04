@@ -3,3 +3,4 @@ __pycache__
 *.env
 src/garden_config/garden_config.json
 venv
+latest.log

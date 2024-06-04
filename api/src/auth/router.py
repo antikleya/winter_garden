@@ -18,7 +18,7 @@ fastapi_users = FastAPIUsers[User, str](
     [auth_backend],
 )
 
-current_user = fastapi_users.current_user(active=True, verified=True)
+current_user = fastapi_users.current_user(active=False, verified=False)
 optional_user = fastapi_users.current_user(optional=True, active=True, verified=True)
 
 login_router = fastapi_users.get_auth_router(auth_backend)
